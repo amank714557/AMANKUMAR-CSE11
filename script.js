@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   TASKS: "studyflow_tasks_v1",
   THEME: "studyflow_theme_v1",
   SESSIONS: "studyflow_sessions_v1",
+  ACTIVITY: "studyflow_activity_v1",
 };
 
 // ================= STUDY TIPS =================
@@ -34,6 +35,11 @@ let remainingSeconds = 25 * 60;
 let timerInterval = null;
 let isTimerRunning = false;
 let completedSessions = 0;
+let studyActivity = {
+  lastActiveDate: null,
+  streak: 0,
+  focusMinutesByDate: {},
+};
 
 // ================= DOM REFERENCES =================
 const todayDateEl = document.getElementById("todayDate");
@@ -91,6 +97,8 @@ const timerProgressRing = document.getElementById("timerProgressRing");
 const startPauseBtn = document.getElementById("startPauseBtn");
 const resetTimerBtn = document.getElementById("resetTimerBtn");
 const sessionCountEl = document.getElementById("sessionCount");
+const focusMinutesTodayEl = document.getElementById("focusMinutesToday");
+const studyStreakEl = document.getElementById("studyStreak");
 
 // Chart, Tips & Toast
 const subjectChartEl = document.getElementById("subjectChart");
@@ -395,9 +403,15 @@ function startEditTask(id) {
 }
 
 function toggleTaskStatus(id) {
-  tasks = tasks.map((task) =>
-    task.id === id ? { ...task, completed: !task.completed } : task
-  );
+  let markedCompleted = false;
+  tasks = tasks.map((task) => {
+    if (task.id !== id) return task;
+    markedCompleted = !task.completed;
+    return { ...task, completed: markedCompleted };
+  });
+  if (markedCompleted) {
+    recordStudyActivity(0);
+  }
   saveTasks();
   renderAll();
 }
@@ -734,6 +748,7 @@ exportBtn.addEventListener("click", () => {
   const payload = {
     exportedAt: new Date().toISOString(),
     completedPomodoroSessions: completedSessions,
+    studyActivity,
     tasks,
   };
 
@@ -834,6 +849,7 @@ function toggleTimer() {
         completedSessions += 1;
         localStorage.setItem(STORAGE_KEYS.SESSIONS, String(completedSessions));
         sessionCountEl.textContent = completedSessions;
+        recordStudyActivity(Math.round(totalSeconds / 60));
         showToast("Focus session complete! Take a short break.");
       } else {
         showToast("Break finished! Ready for another focus session.");
@@ -865,6 +881,68 @@ function initSessions() {
   sessionCountEl.textContent = completedSessions;
 }
 
+// ================= STUDY ACTIVITY & STREAK =================
+
+function saveStudyActivity() {
+  localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify(studyActivity));
+}
+
+function renderStudyActivity() {
+  const today = getLocalDateString(0);
+  const yesterday = getLocalDateString(-1);
+  const minutesToday = Number(studyActivity.focusMinutesByDate[today]) || 0;
+
+  let activeStreak = 0;
+  if (
+    studyActivity.lastActiveDate === today ||
+    studyActivity.lastActiveDate === yesterday
+  ) {
+    activeStreak = studyActivity.streak || 0;
+  }
+
+  focusMinutesTodayEl.textContent = `${minutesToday}m`;
+  studyStreakEl.textContent = `${activeStreak} ${activeStreak === 1 ? "day" : "days"}`;
+}
+
+function loadStudyActivity() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.ACTIVITY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      studyActivity = {
+        lastActiveDate: parsed.lastActiveDate || null,
+        streak: Number.isFinite(Number(parsed.streak)) ? Number(parsed.streak) : 0,
+        focusMinutesByDate:
+          parsed.focusMinutesByDate && typeof parsed.focusMinutesByDate === "object"
+            ? parsed.focusMinutesByDate
+            : {},
+      };
+    }
+  } catch (err) {
+    console.error("Failed to load study activity:", err);
+  }
+  renderStudyActivity();
+}
+
+function recordStudyActivity(addedFocusMinutes = 0) {
+  const today = getLocalDateString(0);
+  const yesterday = getLocalDateString(-1);
+
+  if (studyActivity.lastActiveDate !== today) {
+    studyActivity.streak =
+      studyActivity.lastActiveDate === yesterday ? studyActivity.streak + 1 : 1;
+    studyActivity.lastActiveDate = today;
+  }
+
+  if (addedFocusMinutes > 0) {
+    const current = Number(studyActivity.focusMinutesByDate[today]) || 0;
+    studyActivity.focusMinutesByDate[today] = current + addedFocusMinutes;
+  }
+
+  saveStudyActivity();
+  renderStudyActivity();
+}
+
 // ================= STUDY TIPS =================
 
 function showTip(index) {
@@ -892,6 +970,7 @@ function initApp() {
 
   initTheme();
   initSessions();
+  loadStudyActivity();
   loadTasks();
   renderAll();
   updateTimerUI();

@@ -723,6 +723,38 @@ select:focus {
   min-width: 105px;
 }
 
+.timer-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+}
+
+.timer-stat-item {
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timer-stat-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.timer-stat-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
 /* ================= SUBJECT CHART ================= */
 .chart-subtitle {
   margin-top: 2px;
