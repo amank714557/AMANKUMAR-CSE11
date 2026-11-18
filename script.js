@@ -39,6 +39,8 @@ let completedSessions = 0;
 const todayDateEl = document.getElementById("todayDate");
 const themeToggleBtn = document.getElementById("themeToggle");
 const themeIconEl = document.getElementById("themeIcon");
+const importBtn = document.getElementById("importBtn");
+const importFileInput = document.getElementById("importFileInput");
 const exportBtn = document.getElementById("exportBtn");
 
 // Stats & Progress
@@ -542,7 +544,88 @@ function renderAll() {
   renderSubjectChart();
 }
 
-// ================= EXPORT TO JSON =================
+// ================= EXPORT & IMPORT JSON =================
+
+const VALID_PRIORITIES = new Set(["High", "Medium", "Low"]);
+
+function sanitizeImportedTask(raw, index) {
+  if (!raw || typeof raw !== "object") return null;
+  const title = typeof raw.title === "string" ? raw.title.trim().slice(0, 100) : "";
+  const subject = typeof raw.subject === "string" && raw.subject.trim()
+    ? raw.subject.trim()
+    : "Other";
+  const dueDate = typeof raw.dueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.dueDate)
+    ? raw.dueDate
+    : getLocalDateString(1);
+
+  if (title.length < 3) return null;
+
+  return {
+    id: typeof raw.id === "string" && raw.id.trim()
+      ? raw.id.trim()
+      : `task-import-${Date.now()}-${index}`,
+    title,
+    subject,
+    priority: VALID_PRIORITIES.has(raw.priority) ? raw.priority : "Medium",
+    dueDate,
+    notes: typeof raw.notes === "string" ? raw.notes.trim().slice(0, 140) : "",
+    completed: Boolean(raw.completed),
+    createdAt: Number.isFinite(Number(raw.createdAt)) ? Number(raw.createdAt) : Date.now(),
+  };
+}
+
+importBtn.addEventListener("click", () => {
+  importFileInput.value = "";
+  importFileInput.click();
+});
+
+importFileInput.addEventListener("change", (event) => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || ""));
+      const rawTasks = Array.isArray(parsed) ? parsed : parsed.tasks;
+
+      if (!Array.isArray(rawTasks)) {
+        showToast("Invalid backup file: missing tasks list.");
+        return;
+      }
+
+      const validTasks = rawTasks
+        .map((item, idx) => sanitizeImportedTask(item, idx))
+        .filter(Boolean);
+
+      if (validTasks.length === 0 && rawTasks.length > 0) {
+        showToast("No valid tasks found in the selected file.");
+        return;
+      }
+
+      tasks = validTasks;
+      saveTasks();
+
+      if (
+        !Array.isArray(parsed) &&
+        Number.isFinite(Number(parsed.completedPomodoroSessions)) &&
+        Number(parsed.completedPomodoroSessions) >= 0
+      ) {
+        completedSessions = Math.floor(Number(parsed.completedPomodoroSessions));
+        localStorage.setItem(STORAGE_KEYS.SESSIONS, String(completedSessions));
+        sessionCountEl.textContent = completedSessions;
+      }
+
+      resetEditMode();
+      renderAll();
+      showToast(`Imported ${validTasks.length} study task(s)!`);
+    } catch (err) {
+      console.error("Failed to import JSON:", err);
+      showToast("Could not parse JSON file. Please check the file format.");
+    }
+  };
+  reader.readAsText(file);
+});
 
 exportBtn.addEventListener("click", () => {
   const payload = {

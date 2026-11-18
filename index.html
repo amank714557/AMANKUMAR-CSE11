@@ -29,6 +29,16 @@
 
       <div class="header-actions">
         <span id="todayDate" class="today-badge" aria-label="Today's date"></span>
+        <input
+          type="file"
+          id="importFileInput"
+          accept="application/json,.json"
+          class="hidden"
+          aria-label="Import tasks from JSON file"
+        />
+        <button id="importBtn" class="btn btn-outline" type="button" title="Import tasks from a JSON backup">
+          Import JSON
+        </button>
         <button id="exportBtn" class="btn btn-outline" type="button" title="Export tasks as JSON">
           Export JSON
         </button>
