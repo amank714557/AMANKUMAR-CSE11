@@ -169,15 +169,31 @@ function escapeHTML(text) {
   return div.innerHTML;
 }
 
-/** Show temporary toast feedback message */
+/** Show temporary toast feedback message with optional Undo callback */
 let toastTimeout = null;
-function showToast(message) {
-  toastEl.textContent = message;
+function showToast(message, undoHandler = null) {
+  toastEl.innerHTML = "";
+  const textSpan = document.createElement("span");
+  textSpan.textContent = message;
+  toastEl.appendChild(textSpan);
+
+  if (typeof undoHandler === "function") {
+    const undoBtn = document.createElement("button");
+    undoBtn.type = "button";
+    undoBtn.className = "toast-undo-btn";
+    undoBtn.textContent = "Undo";
+    undoBtn.addEventListener("click", () => {
+      clearTimeout(toastTimeout);
+      undoHandler();
+    });
+    toastEl.appendChild(undoBtn);
+  }
+
   toastEl.classList.add("show");
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => {
     toastEl.classList.remove("show");
-  }, 2600);
+  }, undoHandler ? 5000 : 2600);
 }
 
 // ================= DATA PERSISTENCE =================
@@ -387,13 +403,19 @@ function toggleTaskStatus(id) {
 }
 
 function deleteTask(id) {
+  const previousTasks = tasks.map((task) => ({ ...task }));
   if (taskIdInput.value === id) {
     resetEditMode();
   }
   tasks = tasks.filter((task) => task.id !== id);
   saveTasks();
   renderAll();
-  showToast("Task deleted.");
+  showToast("Task deleted.", () => {
+    tasks = previousTasks;
+    saveTasks();
+    renderAll();
+    showToast("Task restored.");
+  });
 }
 
 clearCompletedBtn.addEventListener("click", () => {
@@ -402,10 +424,16 @@ clearCompletedBtn.addEventListener("click", () => {
     showToast("No completed tasks to clear.");
     return;
   }
+  const previousTasks = tasks.map((task) => ({ ...task }));
   tasks = tasks.filter((t) => !t.completed);
   saveTasks();
   renderAll();
-  showToast(`Cleared ${completedCount} completed task(s).`);
+  showToast(`Cleared ${completedCount} completed task(s).`, () => {
+    tasks = previousTasks;
+    saveTasks();
+    renderAll();
+    showToast("Completed tasks restored.");
+  });
 });
 
 // ================= FILTERING, SORTING & RENDERING =================
