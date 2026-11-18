@@ -73,10 +73,13 @@ const dateErrorEl = document.getElementById("dateError");
 
 // Filters & Task List
 const searchInput = document.getElementById("searchInput");
+const filterSubjectSelect = document.getElementById("filterSubject");
 const filterStatusSelect = document.getElementById("filterStatus");
 const filterPrioritySelect = document.getElementById("filterPriority");
 const sortTasksSelect = document.getElementById("sortTasks");
+const resetFiltersBtn = document.getElementById("resetFiltersBtn");
 const clearCompletedBtn = document.getElementById("clearCompletedBtn");
+const taskCountBadgeEl = document.getElementById("taskCountBadge");
 const taskListEl = document.getElementById("taskList");
 const emptyStateEl = document.getElementById("emptyState");
 
@@ -373,8 +376,26 @@ clearCompletedBtn.addEventListener("click", () => {
 
 // ================= FILTERING, SORTING & RENDERING =================
 
+function hasActiveFilters() {
+  return (
+    searchInput.value.trim() !== "" ||
+    filterSubjectSelect.value !== "all" ||
+    filterStatusSelect.value !== "all" ||
+    filterPrioritySelect.value !== "all"
+  );
+}
+
+function resetFilters() {
+  searchInput.value = "";
+  filterSubjectSelect.value = "all";
+  filterStatusSelect.value = "all";
+  filterPrioritySelect.value = "all";
+  renderTaskList();
+}
+
 function getFilteredAndSortedTasks() {
   const query = searchInput.value.trim().toLowerCase();
+  const subjectFilter = filterSubjectSelect.value;
   const statusFilter = filterStatusSelect.value;
   const priorityFilter = filterPrioritySelect.value;
   const sortBy = sortTasksSelect.value;
@@ -389,15 +410,19 @@ function getFilteredAndSortedTasks() {
         task.subject.toLowerCase().includes(query) ||
         (task.notes && task.notes.toLowerCase().includes(query));
 
+      const matchesSubject =
+        subjectFilter === "all" || task.subject === subjectFilter;
+
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "completed" && task.completed) ||
-        (statusFilter === "pending" && !task.completed);
+        (statusFilter === "pending" && !task.completed) ||
+        (statusFilter === "overdue" && isTaskOverdue(task));
 
       const matchesPriority =
         priorityFilter === "all" || task.priority === priorityFilter;
 
-      return matchesSearch && matchesStatus && matchesPriority;
+      return matchesSearch && matchesSubject && matchesStatus && matchesPriority;
     })
     .sort((a, b) => {
       if (sortBy === "dueAsc") return a.dueDate.localeCompare(b.dueDate);
@@ -411,6 +436,13 @@ function getFilteredAndSortedTasks() {
 
 function renderTaskList() {
   const visibleTasks = getFilteredAndSortedTasks();
+  const filtersActive = hasActiveFilters();
+
+  resetFiltersBtn.classList.toggle("hidden", !filtersActive);
+  taskCountBadgeEl.textContent = filtersActive
+    ? `Showing ${visibleTasks.length} of ${tasks.length}`
+    : `${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`;
+
   taskListEl.innerHTML = "";
 
   if (visibleTasks.length === 0) {
@@ -474,12 +506,21 @@ taskListEl.addEventListener("click", (event) => {
 });
 
 // Re-render when filters change
-[searchInput, filterStatusSelect, filterPrioritySelect, sortTasksSelect].forEach(
-  (control) => {
-    control.addEventListener("input", renderTaskList);
-    control.addEventListener("change", renderTaskList);
-  }
-);
+[
+  searchInput,
+  filterSubjectSelect,
+  filterStatusSelect,
+  filterPrioritySelect,
+  sortTasksSelect,
+].forEach((control) => {
+  control.addEventListener("input", renderTaskList);
+  control.addEventListener("change", renderTaskList);
+});
+
+resetFiltersBtn.addEventListener("click", () => {
+  resetFilters();
+  showToast("Filters reset.");
+});
 
 function renderStatsAndProgress() {
   const total = tasks.length;

@@ -176,8 +176,14 @@
         <!-- Filter & Task List -->
         <section class="card" aria-labelledby="tasksHeading">
           <div class="card-header-row wrap">
-            <h2 id="tasksHeading" class="section-title">My Study Tasks</h2>
+            <div class="task-heading-group">
+              <h2 id="tasksHeading" class="section-title">My Study Tasks</h2>
+              <span id="taskCountBadge" class="task-count-badge">0 tasks</span>
+            </div>
             <div class="task-header-actions">
+              <button id="resetFiltersBtn" class="btn btn-text hidden" type="button">
+                Reset Filters
+              </button>
               <button id="clearCompletedBtn" class="btn btn-text-danger" type="button">
                 Clear Completed
               </button>
@@ -193,9 +199,21 @@
               aria-label="Search tasks"
             />
 
+            <select id="filterSubject" aria-label="Filter by subject">
+              <option value="all">All Subjects</option>
+              <option value="Web Technology">Web Technology</option>
+              <option value="DBMS">DBMS</option>
+              <option value="Operating Systems">Operating Systems</option>
+              <option value="Computer Networks">Computer Networks</option>
+              <option value="Design & Analysis of Algorithms">Algorithms (DAA)</option>
+              <option value="Software Engineering">Software Engineering</option>
+              <option value="Other">Other</option>
+            </select>
+
             <select id="filterStatus" aria-label="Filter by status">
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
               <option value="completed">Completed</option>
             </select>
 
