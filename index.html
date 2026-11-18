@@ -42,6 +42,9 @@
         <button id="exportBtn" class="btn btn-outline" type="button" title="Export tasks as JSON">
           Export JSON
         </button>
+        <button id="shortcutsBtn" class="btn btn-icon" type="button" aria-label="Keyboard shortcuts" title="Keyboard Shortcuts (?)">
+          ?
+        </button>
         <button id="themeToggle" class="btn btn-icon" type="button" aria-label="Toggle dark mode" title="Toggle Dark / Light Theme">
           <span id="themeIcon">🌙</span>
         </button>
@@ -319,6 +322,50 @@
       <p>StudyFlow &bull; B.Tech 3rd Year Web Technology Mini-Project (HTML5, CSS3 &amp; Vanilla JavaScript)</p>
     </div>
   </footer>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div
+    id="shortcutsModal"
+    class="modal-backdrop hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="shortcutsModalTitle"
+  >
+    <div class="modal-card">
+      <div class="card-header-row">
+        <h2 id="shortcutsModalTitle" class="section-title">Keyboard Shortcuts</h2>
+        <button id="closeShortcutsBtn" class="btn btn-text" type="button" aria-label="Close shortcuts dialog">
+          Close
+        </button>
+      </div>
+      <ul class="shortcuts-list">
+        <li class="shortcut-row">
+          <span>Focus task search</span>
+          <kbd>/</kbd>
+        </li>
+        <li class="shortcut-row">
+          <span>Jump to new task input</span>
+          <kbd>N</kbd>
+        </li>
+        <li class="shortcut-row">
+          <span>Start or pause Pomodoro timer</span>
+          <kbd>Space</kbd>
+        </li>
+        <li class="shortcut-row">
+          <span>Toggle light / dark theme</span>
+          <kbd>T</kbd>
+        </li>
+        <li class="shortcut-row">
+          <span>Cancel editing or close dialog</span>
+          <kbd>Esc</kbd>
+        </li>
+        <li class="shortcut-row">
+          <span>Show this shortcuts guide</span>
+          <kbd>?</kbd>
+        </li>
+      </ul>
+    </div>
+  </div>
 
   <!-- Toast Notification -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

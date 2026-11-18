@@ -48,6 +48,9 @@ const themeIconEl = document.getElementById("themeIcon");
 const importBtn = document.getElementById("importBtn");
 const importFileInput = document.getElementById("importFileInput");
 const exportBtn = document.getElementById("exportBtn");
+const shortcutsBtn = document.getElementById("shortcutsBtn");
+const shortcutsModal = document.getElementById("shortcutsModal");
+const closeShortcutsBtn = document.getElementById("closeShortcutsBtn");
 
 // Stats & Progress
 const statTotalEl = document.getElementById("statTotal");
@@ -952,6 +955,66 @@ function showTip(index) {
 
 nextTipBtn.addEventListener("click", () => {
   showTip(currentTipIndex + 1);
+});
+
+// ================= KEYBOARD SHORTCUTS & MODAL =================
+
+function toggleShortcutsModal(forceState) {
+  const shouldOpen =
+    typeof forceState === "boolean"
+      ? forceState
+      : shortcutsModal.classList.contains("hidden");
+  shortcutsModal.classList.toggle("hidden", !shouldOpen);
+  if (shouldOpen) {
+    closeShortcutsBtn.focus();
+  }
+}
+
+shortcutsBtn.addEventListener("click", () => toggleShortcutsModal(true));
+closeShortcutsBtn.addEventListener("click", () => toggleShortcutsModal(false));
+shortcutsModal.addEventListener("click", (event) => {
+  if (event.target === shortcutsModal) {
+    toggleShortcutsModal(false);
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  const target = event.target;
+  const isTyping =
+    target &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.tagName === "SELECT" ||
+      target.isContentEditable);
+
+  if (event.key === "Escape") {
+    if (!shortcutsModal.classList.contains("hidden")) {
+      toggleShortcutsModal(false);
+    } else if (taskIdInput.value) {
+      resetEditMode();
+      showToast("Edit cancelled.");
+    }
+    return;
+  }
+
+  if (isTyping || event.ctrlKey || event.metaKey || event.altKey) return;
+
+  if (event.key === "/") {
+    event.preventDefault();
+    searchInput.focus();
+  } else if (event.key.toLowerCase() === "n") {
+    event.preventDefault();
+    taskTitleInput.focus();
+  } else if (event.code === "Space") {
+    event.preventDefault();
+    toggleTimer();
+  } else if (event.key.toLowerCase() === "t") {
+    event.preventDefault();
+    themeToggleBtn.click();
+  } else if (event.key === "?") {
+    event.preventDefault();
+    toggleShortcutsModal();
+  }
 });
 
 // ================= INITIALIZATION =================
