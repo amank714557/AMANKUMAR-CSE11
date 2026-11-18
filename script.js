@@ -122,10 +122,44 @@ function formatDisplayDate(dateStr) {
   });
 }
 
+/** Calculate whole-day difference between YYYY-MM-DD date and today */
+function getDaysUntilDue(dateStr) {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const due = new Date(year, month - 1, day);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((due - today) / (1000 * 60 * 60 * 24));
+}
+
 /** Check if a task is overdue (past today and not completed) */
 function isTaskOverdue(task) {
   if (task.completed || !task.dueDate) return false;
   return task.dueDate < getLocalDateString(0);
+}
+
+/** Build display text and CSS class for a task's due date badge */
+function getDueDateBadge(task) {
+  const formatted = formatDisplayDate(task.dueDate);
+  if (task.completed || !task.dueDate) {
+    return { className: "badge-date", label: `Due: ${formatted}` };
+  }
+
+  const diffDays = getDaysUntilDue(task.dueDate);
+  if (diffDays < 0) {
+    const overdueDays = Math.abs(diffDays);
+    return {
+      className: "badge-overdue",
+      label: `Overdue (${overdueDays}d): ${formatted}`,
+    };
+  }
+  if (diffDays === 0) {
+    return { className: "badge-due-soon", label: `Due Today (${formatted})` };
+  }
+  if (diffDays === 1) {
+    return { className: "badge-due-soon", label: `Due Tomorrow (${formatted})` };
+  }
+  return { className: "badge-date", label: `Due: ${formatted}` };
 }
 
 /** Escape HTML special characters to prevent XSS injection */
@@ -457,7 +491,7 @@ function renderTaskList() {
     li.className = `task-item${task.completed ? " completed" : ""}`;
     li.dataset.id = task.id;
 
-    const overdue = isTaskOverdue(task);
+    const dueBadge = getDueDateBadge(task);
     const priorityClass = `badge-${task.priority.toLowerCase()}`;
 
     li.innerHTML = `
@@ -474,8 +508,8 @@ function renderTaskList() {
           <div class="task-meta">
             <span class="badge badge-subject">${escapeHTML(task.subject)}</span>
             <span class="badge ${priorityClass}">${escapeHTML(task.priority)}</span>
-            <span class="badge ${overdue ? "badge-overdue" : "badge-date"}">
-              ${overdue ? "Overdue: " : "Due: "}${formatDisplayDate(task.dueDate)}
+            <span class="badge ${dueBadge.className}">
+              ${escapeHTML(dueBadge.label)}
             </span>
           </div>
         </div>
