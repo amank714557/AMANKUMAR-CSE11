@@ -32,6 +32,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * 78; // matches r="78" in index.html
 let timerMode = "focus";
 let totalSeconds = 25 * 60;
 let remainingSeconds = 25 * 60;
+let timerEndTimestamp = null;
 let timerInterval = null;
 let isTimerRunning = false;
 let completedSessions = 0;
@@ -299,11 +300,15 @@ function clearValidationErrors() {
   titleErrorEl.textContent = "";
   subjectErrorEl.textContent = "";
   dateErrorEl.textContent = "";
+  taskTitleInput.removeAttribute("aria-invalid");
+  taskSubjectInput.removeAttribute("aria-invalid");
+  taskDueDateInput.removeAttribute("aria-invalid");
 }
 
 function validateForm() {
   clearValidationErrors();
   let isValid = true;
+  let firstInvalidField = null;
 
   const title = taskTitleInput.value.trim();
   const subject = taskSubjectInput.value;
@@ -311,17 +316,27 @@ function validateForm() {
 
   if (title.length < 3) {
     titleErrorEl.textContent = "Please enter a task title (at least 3 characters).";
+    taskTitleInput.setAttribute("aria-invalid", "true");
+    firstInvalidField = firstInvalidField || taskTitleInput;
     isValid = false;
   }
 
   if (!subject) {
     subjectErrorEl.textContent = "Please select a subject.";
+    taskSubjectInput.setAttribute("aria-invalid", "true");
+    firstInvalidField = firstInvalidField || taskSubjectInput;
     isValid = false;
   }
 
   if (!dueDate) {
     dateErrorEl.textContent = "Please choose a due date.";
+    taskDueDateInput.setAttribute("aria-invalid", "true");
+    firstInvalidField = firstInvalidField || taskDueDateInput;
     isValid = false;
+  }
+
+  if (firstInvalidField) {
+    firstInvalidField.focus();
   }
 
   return isValid;
@@ -811,7 +826,9 @@ function setTimerMode(mode, minutes) {
   remainingSeconds = totalSeconds;
 
   modeButtons.forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.mode === mode);
+    const isActive = btn.dataset.mode === mode;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-selected", String(isActive));
   });
 
   const labels = {
@@ -826,12 +843,19 @@ function setTimerMode(mode, minutes) {
 function stopTimer() {
   clearInterval(timerInterval);
   timerInterval = null;
+  timerEndTimestamp = null;
   isTimerRunning = false;
   startPauseBtn.textContent = "Start";
 }
 
 function toggleTimer() {
   if (isTimerRunning) {
+    if (timerEndTimestamp) {
+      remainingSeconds = Math.max(
+        0,
+        Math.ceil((timerEndTimestamp - Date.now()) / 1000)
+      );
+    }
     stopTimer();
     updateTimerUI();
     return;
@@ -839,10 +863,17 @@ function toggleTimer() {
 
   isTimerRunning = true;
   startPauseBtn.textContent = "Pause";
+  timerEndTimestamp = Date.now() + remainingSeconds * 1000;
 
   timerInterval = setInterval(() => {
-    remainingSeconds -= 1;
-    updateTimerUI();
+    const nextRemaining = Math.max(
+      0,
+      Math.ceil((timerEndTimestamp - Date.now()) / 1000)
+    );
+    if (nextRemaining !== remainingSeconds) {
+      remainingSeconds = nextRemaining;
+      updateTimerUI();
+    }
 
     if (remainingSeconds <= 0) {
       stopTimer();
@@ -861,7 +892,7 @@ function toggleTimer() {
       remainingSeconds = totalSeconds;
       updateTimerUI();
     }
-  }, 1000);
+  }, 250);
 }
 
 modeButtons.forEach((btn) => {
