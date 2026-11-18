@@ -412,6 +412,18 @@ select:focus {
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
+input[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft);
+}
+
+button:focus-visible,
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .error-msg {
   color: var(--danger);
   font-size: 0.78rem;
@@ -953,5 +965,56 @@ kbd {
 
   .today-badge {
     display: none;
+  }
+}
+
+/* ================= ACCESSIBILITY & PRINT ================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  body {
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  .app-header {
+    position: static;
+    box-shadow: none;
+  }
+
+  .header-actions,
+  #taskForm,
+  #formHeading,
+  #cancelEditBtn,
+  .filters-bar,
+  .task-header-actions,
+  .task-actions,
+  .workspace-side,
+  .toast,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  .workspace-main > .card:first-child {
+    display: none !important;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card,
+  .stat-card,
+  .task-item {
+    box-shadow: none;
+    break-inside: avoid;
   }
 }
